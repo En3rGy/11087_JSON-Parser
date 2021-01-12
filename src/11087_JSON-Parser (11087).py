@@ -81,7 +81,7 @@ class JSON_Parser_11087_11087(hsl20_3.BaseModule):
             val = val.replace( ": False", ': false' )
             val = val.replace( ": True", ': true' )
 
-        self.DEBUG.set_value("Value", str(val))
+        #self.DEBUG.set_value("Value", str(val))
 
         self._set_output_value(self.PIN_O_SVALUE, str(val))
 
@@ -89,5 +89,5 @@ class JSON_Parser_11087_11087(hsl20_3.BaseModule):
         try:
             self._set_output_value(self.PIN_O_FVALUE, float(val))
         except Exception as e:
-            self.DEBUG.add_message("Error converting '" + str(val) + "' to float: " + str(e))
-
+            #self.DEBUG.add_message("Error converting '" + str(val) + "' to float: " + str(e))
+            pass
