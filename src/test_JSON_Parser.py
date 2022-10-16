@@ -114,28 +114,38 @@ class JSON_Parser_11087_11087(hsl20_4.BaseModule):
 
         if isinstance(json_file, list):
             if n_index < len(json_file):
-                return json.dumps(json_file[n_index])
+                val = json_file[n_index]
+                if isinstance(val, unicode):
+                    return True, val.encode("ascii", "xmlcharrefreplace")
+                else:
+                    return True, json.dumps(val)
 
-        return "{}"
+        return False, "{}"
 
     def get_value(self, s_json, s_key):
-        json_file = json.loads(s_json)
+        try:
+            json_file = json.loads(s_json)
+        except ValueError as e:
+            self.DEBUG.add_message('In get_value:129, "' + e.message + '" with\n' + s_json)
+            return False, str()
+
         ret = ""
         if s_key in json_file:
             val = json_file[s_key]
 
-            if (isinstance(val, dict)
-                    or isinstance(val, list)):
+            if isinstance(val, dict) or isinstance(val, list):
                 ret = json.dumps(val)
             else:
                 ret = val
+
+            if isinstance(ret, str):
+                ret = ret.encode("ascii", "xmlcharrefreplace")
+
         else:
             self.DEBUG.add_message("Error: Key not found.")
+            return False, ""
 
-        if isinstance(ret, str):
-            ret = ret.encode("ascii", "xmlcharrefreplace")
-
-        return ret
+        return True, ret
 
     def on_init(self):
         self.DEBUG = self.FRAMEWORK.create_debug_section()
@@ -161,10 +171,13 @@ class JSON_Parser_11087_11087(hsl20_4.BaseModule):
 
         if n_idx >= 0:
             self.DEBUG.add_message("Index requested")
-            val = self.get_list_element(s_json, n_idx)
+            ok, val = self.get_list_element(s_json, n_idx)
         else:
             self.DEBUG.add_message("Value requested")
-            val = self.get_value(s_json, s_key)
+            ok, val = self.get_value(s_json, s_key)
+
+        if not ok:
+            return
 
         # handle unicode representation
         if isinstance(val, str):
@@ -172,8 +185,10 @@ class JSON_Parser_11087_11087(hsl20_4.BaseModule):
             val = val.replace("'", '"')
             val = val.replace(": False", ': false')
             val = val.replace(": True", ': true')
-        else:
+        try:
             self._set_output_value(self.PIN_O_FVALUE, float(val))
+        except:
+            pass
 
         self._set_output_value(self.PIN_O_SVALUE, str(val))
 
@@ -189,17 +204,28 @@ class JsonTests(unittest.TestCase):
     def tearDown(self):
         pass
 
+    def test_error_json(self):
+        in_json = '{"test":1, "dummy":2 "go": 3}'
+        self.dummy.debug_input_value[self.dummy.PIN_I_SJSON] = in_json
+        self.dummy.debug_input_value[self.dummy.PIN_I_SKEY] = "go"
+        self.dummy.debug_input_value[self.dummy.PIN_I_NIDX] = -1
+
+        self.dummy.on_input_value(self.dummy.PIN_I_SKEY, "go")
+
+        self.assertTrue(True)
+
     def test_getValue_str(self):
         in_text = '{"siteCurrentPowerFlow":{"updateRefreshRate":3,"unit":"kW","connections":[{"from":"STORAGE",' \
                   '"to":"Load"},{"from":"GRID","to":"Load"}],"GRID":{"status":"Active","currentPower":0.01},' \
                   '"LOAD":{"status":"Active","currentPower":1.37},"PV":{"status":"Idle","currentPower":0.0},' \
                   '"STORAGE":{"status":"Discharging","currentPower":1.36,"chargeLevel":38,"critical":false}}} '
 
-        ret = self.dummy.get_value(in_text, "siteCurrentPowerFlow")
+        ok, ret = self.dummy.get_value(in_text, "siteCurrentPowerFlow")
         res = '{"LOAD": {"status": "Active", "currentPower": 1.37}, "PV": {"status": "Idle", "currentPower": 0.0}, ' \
               '"STORAGE": {"status": "Discharging", "critical": false, "chargeLevel": 38, "currentPower": 1.36}, ' \
               '"connections": [{"to": "Load", "from": "STORAGE"}, {"to": "Load", "from": "GRID"}], "GRID": {"status": ' \
               '"Active", "currentPower": 0.01}, "updateRefreshRate": 3, "unit": "kW"} '
+        self.assertTrue(ok)
         self.assertEqual(json.loads(ret), json.loads(res))
 
     def test_getValue_int(self):
@@ -207,7 +233,8 @@ class JsonTests(unittest.TestCase):
               '"STORAGE": {"status": "Discharging", "critical": false, "chargeLevel": 38, "currentPower": 1.36}, ' \
               '"connections": [{"to": "Load", "from": "STORAGE"}, {"to": "Load", "from": "GRID"}], "GRID": {"status": ' \
               '"Active", "currentPower": 0.01}, "updateRefreshRate": 3, "unit": "kW"} '
-        ret = self.dummy.get_value(ret, "updateRefreshRate")
+        ok, ret = self.dummy.get_value(ret, "updateRefreshRate")
+        self.assertTrue(ok)
         self.assertEqual(ret, 3)
 
     def test_index(self):
@@ -219,7 +246,15 @@ class JsonTests(unittest.TestCase):
         self.dummy.on_input_value(self.dummy.PIN_I_NIDX, 1)
 
         ret = self.dummy.debug_output_value[self.dummy.PIN_O_SVALUE]
-        self.assertEqual(ret, '"Active"')
+        self.assertEqual(ret, 'Active')
+
+        ret = '[["LOAD", "Active", "PV"], [1, 2, 3]]'
+        self.dummy.debug_input_value[self.dummy.PIN_I_SJSON] = ret
+
+        self.dummy.on_input_value(self.dummy.PIN_I_NIDX, 1)
+
+        ret = self.dummy.debug_output_value[self.dummy.PIN_O_SVALUE]
+        self.assertEqual(ret, "[1, 2, 3]")
 
     def test_key(self):
         ret = '{"LOAD": {"status": "Active", "currentPower": 1.37}, "PV": {"status": "Idle", "currentPower": 0.0}, ' \
@@ -238,6 +273,30 @@ class JsonTests(unittest.TestCase):
 
         ret = self.dummy.debug_output_value[self.dummy.PIN_O_FVALUE]
         self.assertEqual(ret, 3)
+
+    def test_kaskade(self):
+        ret = '{"1": "a", "2":[{"2.1": "b.1", "2.2": "b.2"}, {"2.3": "b.3"}]}'
+        self.dummy.debug_input_value[self.dummy.PIN_I_SJSON] = ret
+        self.dummy.debug_input_value[self.dummy.PIN_I_NIDX] = -1
+        self.dummy.debug_input_value[self.dummy.PIN_I_SKEY] = "2"
+
+        self.dummy.on_input_value(self.dummy.PIN_I_SKEY, "2")
+        ret = self.dummy.debug_output_value[self.dummy.PIN_O_SVALUE]
+        self.assertEqual(json.loads('[{"2.1": "b.1", "2.2": "b.2"}, {"2.3": "b.3"}]'), json.loads(ret))
+
+        self.dummy.debug_input_value[self.dummy.PIN_I_SJSON] = ret
+        self.dummy.debug_input_value[self.dummy.PIN_I_NIDX] = 0
+        self.dummy.on_input_value(self.dummy.PIN_I_NIDX, 0)
+        ret = self.dummy.debug_output_value[self.dummy.PIN_O_SVALUE]
+        self.assertEqual(json.loads('{"2.1": "b.1", "2.2": "b.2"}'), json.loads(ret))
+
+        self.dummy.debug_input_value[self.dummy.PIN_I_SJSON] = ret
+        self.dummy.debug_input_value[self.dummy.PIN_I_NIDX] = -1
+        self.dummy.debug_input_value[self.dummy.PIN_I_SKEY] = "2.2"
+        self.dummy.on_input_value(self.dummy.PIN_I_SKEY, "2.2")
+        ret = self.dummy.debug_output_value[self.dummy.PIN_O_SVALUE]
+
+        self.assertEqual("b.2", ret)
 
 if __name__ == '__main__':
     unittest.main()

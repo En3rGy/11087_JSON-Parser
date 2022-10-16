@@ -7,24 +7,20 @@ Der Baustein liefert den Wert eines JSON Objekts oder die hinter dem Objekt lieg
 - Umlaute / Sonderzeichen werden [XML-Encodiert](https://wiki.selfhtml.org/wiki/XML/Regeln/Zeichen) ausgegeben
 - Bei einem Wert Array Index > -1: Ausgabe von Listeneinträgen
 
-Z.B.: `{"1": "a", "2":[{"2.1": "b.1", "2.2": "b.2"}, {"2.3": "b.3"}]}`
-1. Baustein mit key = "2";
-2. Baustein mit Idx = 0;
-3. Baustein mit Key= 2.2
-
-Ausgabe "b.2" 
+Beispiel für eine Bausteinkaskade, mit JSON-String = `{"1": "a", "2":[{"2.1": "b.1", "2.2": "b.2"}, {"2.3": "b.3"}]}`
+1. Baustein mit Key = "2" liefert `[{"2.1": "b.1", "2.2": "b.2"}, {"2.3": "b.3"}]`
+2. Baustein mit Idx = 0 liefert `{"2.1": "b.1", "2.2": "b.2"}`
+3. Baustein mit Key = "2.2" liefert `"b.2"` 
 
 ## Eingänge
 
-
-| Nr. | Name        | Initialisierung | Beschreibung                                             |
-|-----|-------------|-----------------|----------------------------------------------------------|
-| 1   | JSON-String |                 | Gültiger (!) JSON-String                                 |
-| 2   | Key         |                 | JSON Key für den der Wert ausgegeben werden soll.        |
-| 3   | Array Index | -1              | Index des Array Elements, welches ausgegeben werden soll |
+| Nr. | Name        | Initialisierung | Beschreibung                                                                                |
+|-----|-------------|-----------------|---------------------------------------------------------------------------------------------|
+| 1   | JSON-String |                 | Gültiger (!) JSON-String                                                                    |
+| 2   | Key         |                 | JSON Key, für den der Wert ausgegeben werden soll.<br>*Wird nur verwendet, wenn Array Index < 0!* |
+| 3   | Array Index | -1              | Index des Array Elements, welches ausgegeben werden soll. Das erste Element hat den Index 0<br>*Wenn >= 0 wird immer der Index verwendet und nie der Key!* |
 
 ## Ausgänge
-
 
 | Nr. | Name           | Initialisierung | Beschreibung                                     |
 |-----|----------------|-----------------|--------------------------------------------------|
@@ -38,6 +34,10 @@ Ausgabe "b.2"
 
 ### Change Log
 
+- v1.3
+  - added unit tests
+  - improved reliability / stability
+  - improved documentation
 - v1.2
   - Refactoring der unit tests
   - Verbesserung der unit tests

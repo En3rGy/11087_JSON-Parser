@@ -27,28 +27,38 @@ class JSON_Parser_11087_11087(hsl20_4.BaseModule):
 
         if isinstance(json_file, list):
             if n_index < len(json_file):
-                return json.dumps(json_file[n_index])
+                val = json_file[n_index]
+                if isinstance(val, unicode):
+                    return True, val.encode("ascii", "xmlcharrefreplace")
+                else:
+                    return True, json.dumps(val)
 
-        return "{}"
+        return False, "{}"
 
     def get_value(self, s_json, s_key):
-        json_file = json.loads(s_json)
+        try:
+            json_file = json.loads(s_json)
+        except ValueError as e:
+            self.DEBUG.add_message('In get_value:129, "' + e.message + '" with\n' + s_json)
+            return False, str()
+
         ret = ""
         if s_key in json_file:
             val = json_file[s_key]
 
-            if (isinstance(val, dict)
-                    or isinstance(val, list)):
+            if isinstance(val, dict) or isinstance(val, list):
                 ret = json.dumps(val)
             else:
                 ret = val
+
+            if isinstance(ret, str):
+                ret = ret.encode("ascii", "xmlcharrefreplace")
+
         else:
             self.DEBUG.add_message("Error: Key not found.")
+            return False, ""
 
-        if isinstance(ret, str):
-            ret = ret.encode("ascii", "xmlcharrefreplace")
-
-        return ret
+        return True, ret
 
     def on_init(self):
         self.DEBUG = self.FRAMEWORK.create_debug_section()
@@ -74,10 +84,13 @@ class JSON_Parser_11087_11087(hsl20_4.BaseModule):
 
         if n_idx >= 0:
             self.DEBUG.add_message("Index requested")
-            val = self.get_list_element(s_json, n_idx)
+            ok, val = self.get_list_element(s_json, n_idx)
         else:
             self.DEBUG.add_message("Value requested")
-            val = self.get_value(s_json, s_key)
+            ok, val = self.get_value(s_json, s_key)
+
+        if not ok:
+            return
 
         # handle unicode representation
         if isinstance(val, str):
@@ -85,7 +98,9 @@ class JSON_Parser_11087_11087(hsl20_4.BaseModule):
             val = val.replace("'", '"')
             val = val.replace(": False", ': false')
             val = val.replace(": True", ': true')
-        else:
+        try:
             self._set_output_value(self.PIN_O_FVALUE, float(val))
+        except:
+            pass
 
         self._set_output_value(self.PIN_O_SVALUE, str(val))
