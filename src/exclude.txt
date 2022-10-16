@@ -1,5 +1,6 @@
 .json
-test_JSON-Parser.py
+test_JSON_Parser.py
+exclude.txt
 .project
 .pydevproject
 .pyc
