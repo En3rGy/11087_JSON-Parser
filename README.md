@@ -14,18 +14,18 @@ Beispiel für eine Bausteinkaskade, mit JSON-String = `{"1": "a", "2":[{"2.1": "
 
 ## Eingänge
 
-| Nr. | Name        | Initialisierung | Beschreibung                                                                                |
-|-----|-------------|-----------------|---------------------------------------------------------------------------------------------|
-| 1   | JSON-String |                 | Gültiger (!) JSON-String                                                                    |
-| 2   | Key         |                 | JSON Key, für den der Wert ausgegeben werden soll.<br>*Wird nur verwendet, wenn Array Index < 0!* |
+| Nr. | Name        | Initialisierung | Beschreibung                                                                                                                                   |
+|-----|-------------|-----------------|------------------------------------------------------------------------------------------------------------------------------------------------|
+| 1   | JSON-String |                 | Gültiger (!) JSON-String                                                                                                                       |
+| 2   | Key         |                 | JSON Key, für den der Wert ausgegeben werden soll.<br>*Wird nur verwendet, wenn Array Index < 0!*                                              |
 | 3   | Array Index | -1              | Index des Array Elements, welches ausgegeben werden soll. Das erste Element hat den Index 0<br>*Wenn >= 0 wird immer der Index verwendet und nie der Key!* |
 
 ## Ausgänge
 
-| Nr. | Name           | Initialisierung | Beschreibung                                     |
-|-----|----------------|-----------------|--------------------------------------------------|
-| 1   | Value (str)    |                 | Angefragter Wert oder JSON-Struktur              |
-| 2   | Value (number) | 0               | Angefragter Wert als Zahl (float, int oder bool) | 
+| Nr. | Name           | Initialisierung | Beschreibung                                                                           |
+|-----|----------------|-----------------|----------------------------------------------------------------------------------------|
+| 1   | Value (str)    |                 | Angefragter Wert oder JSON-Struktur; XML enkodiert, falls UTF-8 Zeichen enthalten sind |
+| 2   | Value (number) | 0               | Angefragter Wert als Zahl (float, int oder bool)                                       | 
 
 ## Sonstiges 
 
@@ -34,6 +34,8 @@ Beispiel für eine Bausteinkaskade, mit JSON-String = `{"1": "a", "2":[{"2.1": "
 
 ### Change Log
 
+- v1.4
+  - XML encoded output if UTF-8 characters would be part of the output
 - v1.3
   - added unit tests
   - improved reliability / stability

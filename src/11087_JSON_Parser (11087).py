@@ -35,23 +35,34 @@ class JSON_Parser_11087_11087(hsl20_4.BaseModule):
 
         return False, "{}"
 
-    def get_value(self, s_json, s_key):
+    def get_value(self, json_file, key):
+        """
+
+        :param json_file:
+        :type json_file: unicode or non-unicode string
+        :param key:
+        :type key: non-unicode string
+        :return:
+        """
         try:
-            json_file = json.loads(s_json)
+            json_file = json.loads(json_file)
         except ValueError as e:
-            self.DEBUG.add_message('In get_value:129, "' + e.message + '" with\n' + s_json)
+            self.DEBUG.add_message('In get_value:129, "{}" with \n{}'.format(e.message, json_file))
             return False, str()
 
+        if not isinstance(key, unicode):
+            key = key.decode('utf-8')
+
         ret = ""
-        if s_key in json_file:
-            val = json_file[s_key]
+        if key in json_file:
+            val = json_file[key]
 
             if isinstance(val, dict) or isinstance(val, list):
                 ret = json.dumps(val)
             else:
                 ret = val
 
-            if isinstance(ret, str):
+            if isinstance(ret, unicode):
                 ret = ret.encode("ascii", "xmlcharrefreplace")
 
         else:
@@ -103,4 +114,4 @@ class JSON_Parser_11087_11087(hsl20_4.BaseModule):
         except:
             pass
 
-        self._set_output_value(self.PIN_O_SVALUE, str(val))
+        self._set_output_value(self.PIN_O_SVALUE, str(val).encode("ascii", "xmlcharrefreplace"))
