@@ -1,13 +1,19 @@
 # coding: utf8
 
 import unittest
-import time
 import json
-import random
 
-from test_JSON_Parser import JSON_Parser_11087_11087
+################################
+# get the code
+with open('framework_helper.py', 'r') as f1, open('../src/11087_JSON_Parser (11087).py', 'r') as f2:
+    framework_code = f1.read()
+    debug_code = f2.read()
+
+exec (framework_code + debug_code)
 
 
+################################
+# unit tests
 class JsonTests(unittest.TestCase):
 
     def setUp(self):
